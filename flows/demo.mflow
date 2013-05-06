@@ -1,0 +1,542 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<mule-configuration xmlns="http://www.mulesoft.com/tooling/messageflow" name="demo">
+    <global-element type="http://www.mulesoft.org/schema/mule/core/configuration" name="Configuration" entity-id="Configuration#1">
+        <properties>
+            <property name="defaultExceptionStrategy-ref"/>
+            <property value="1" name="auxiliary;index"/>
+        </properties>
+    </global-element>
+    <global-element type="http://www.mulesoft.org/schema/mule/stormpath/config" name="Stormpath" entity-id="Stormpath#1">
+        <properties>
+            <property value="${stormpath.apiKeySecret}" name="apiKeySecret"/>
+            <property value="${stormpath.apiKeyId}" name="apiKeyId"/>
+            <property value="Stormpath" name="name"/>
+            <property value="13" name="auxiliary;index"/>
+        </properties>
+    </global-element>
+    <global-element type="org.mule.tooling.ui.modules.core.global.ajaxConnector" name="Ajax" entity-id="Ajax#1">
+        <properties>
+            <property name="maxInterval"/>
+            <property value="true" name="jsonCommented"/>
+            <property name="interval"/>
+            <property name="logLevel"/>
+            <property value="Ajax" name="name"/>
+            <property name="refsThreshold"/>
+            <property name="disableReplyTo"/>
+            <property name="multiFrameInterval"/>
+            <property value="${app.home}/docroot" name="resourceBase"/>
+            <property name="timeout"/>
+            <property value="14" name="auxiliary;index"/>
+            <property value="http://localhost:8081/stormpath" name="serverUrl"/>
+        </properties>
+    </global-element>
+    <flow SubFlow="false" name="readTenantApplications" entity-id="d333ae76-3077-4f78-a466-996022da18d8">
+        <properties>
+            <property name="processingStrategy"/>
+            <property name="processingStrategy2"/>
+            <property name="bussinessEventsLabel"/>
+            <property name="tracking:enable-default-events"/>
+            <property value="15" name="auxiliary;index"/>
+        </properties>
+        <lane isChoiceOtherwiseLane="false" index="0" hadOnlyOneElement="false" entity-id="compartment-lane#1">
+            <graphicalData height="0" width="0" y="0" x="0"/>
+            <endpoint message-exchange-pattern="OneWay" direction="Inbound" type="org.mule.tooling.ui.modules.core.ajax.AJAX" name="Ajax" entity-id="Ajax#2">
+                <graphicalData height="0" width="0" y="0" x="0"/>
+                <properties>
+                    <property name="businessEventsLabel"/>
+                    <property name="messageCacheSize"/>
+                    <property name="disableTransportTransformer"/>
+                    <property value="one-way" name="exchange-pattern"/>
+                    <property name="tracking:enable-default-events"/>
+                    <property name="ref"/>
+                    <property name="transformer-refs"/>
+                    <property name="cacheMessages"/>
+                    <property name="address"/>
+                    <property name="encoding"/>
+                    <property value="/stormpath/read-tenant-applications" name="channel"/>
+                    <property value="16" name="auxiliary;index"/>
+                    <property value="10000" name="responseTimeout"/>
+                    <property name="mimeType"/>
+                    <property name="connector-ref"/>
+                </properties>
+            </endpoint>
+            <pattern type="http://www.mulesoft.org/schema/mule/core/flow-ref" name="Flow Reference" entity-id="Flow Reference#1">
+                <graphicalData height="0" width="0" y="0" x="0"/>
+                <properties>
+                    <property value="safeReadTenantApplications" name="name"/>
+                    <property value="17" name="auxiliary;index"/>
+                </properties>
+            </pattern>
+        </lane>
+    </flow>
+    <flow SubFlow="false" name="safeReadTenantApplications" entity-id="1d1414db-6557-481d-a223-5b74911bfcf5">
+        <properties>
+            <property value="synchronous" name="processingStrategy"/>
+            <property value="synchronous" name="processingStrategy2"/>
+            <property name="bussinessEventsLabel"/>
+            <property name="tracking:enable-default-events"/>
+            <property value="18" name="auxiliary;index"/>
+        </properties>
+        <lane isChoiceOtherwiseLane="false" index="0" hadOnlyOneElement="false" entity-id="compartment-lane#2">
+            <graphicalData height="0" width="0" y="0" x="0"/>
+            <pattern type="http://www.mulesoft.org/schema/mule/stormpath/stormpath-connector" name="Stormpath" entity-id="Stormpath#2">
+                <graphicalData height="0" width="0" y="0" x="0"/>
+                <properties>
+                    <property value="current" name="tenantId"/>
+                    <property value="http://www.mulesoft.org/schema/mule/stormpath/read-tenant" name="org.mule.tooling.ui.modules.core.widgets.meta.ModeAttribute"/>
+                    <property value="Stormpath" name="config-ref"/>
+                    <property value="19" name="auxiliary;index"/>
+                </properties>
+            </pattern>
+            <pattern type="http://www.mulesoft.org/schema/mule/core/variable-transformer" name="Variable" entity-id="Variable#1">
+                <graphicalData height="0" width="0" y="0" x="0"/>
+                <properties>
+                    <property value="tenantId" name="variableName"/>
+                    <property value="#[StringUtils.substringAfter(message.payload.href, '/tenants/')]" name="value"/>
+                    <property value="http://www.mulesoft.org/schema/mule/core/set-variable" name="org.mule.tooling.ui.modules.core.widgets.meta.ModeAttribute"/>
+                    <property value="20" name="auxiliary;index"/>
+                </properties>
+            </pattern>
+            <pattern type="http://www.mulesoft.org/schema/mule/stormpath/stormpath-connector" name="Stormpath" entity-id="Stormpath#3">
+                <graphicalData height="0" width="0" y="0" x="0"/>
+                <properties>
+                    <property name="limit"/>
+                    <property value="#[tenantId]" name="tenantId"/>
+                    <property value="http://www.mulesoft.org/schema/mule/stormpath/read-tenant-applications" name="org.mule.tooling.ui.modules.core.widgets.meta.ModeAttribute"/>
+                    <property name="offset"/>
+                    <property value="Stormpath" name="config-ref"/>
+                    <property value="21" name="auxiliary;index"/>
+                </properties>
+            </pattern>
+            <scope type="http://www.mulesoft.org/schema/mule/core/catch-exception-strategy" name="Catch Exception Strategy" entity-id="Catch Exception Strategy#1">
+                <properties>
+                    <property name="labelConfigureConditionalExecutionUsingExpression"/>
+                    <property name="when"/>
+                    <property name="enableNotifications"/>
+                    <property value="22" name="auxiliary;index"/>
+                </properties>
+                <compartment entity-id="compartment#1">
+                    <lane isChoiceOtherwiseLane="false" index="0" hadOnlyOneElement="false" entity-id="compartment-lane#3">
+                        <pattern type="http://www.mulesoft.org/schema/mule/core/set-payload" name="Set Payload" entity-id="Set Payload#1">
+                            <graphicalData height="0" width="0" y="0" x="0"/>
+                            <properties>
+<property value="#[exception.cause.message]" name="value"/>
+<property value="23" name="auxiliary;index"/>
+                            </properties>
+                        </pattern>
+                    </lane>
+                </compartment>
+            </scope>
+        </lane>
+    </flow>
+    <flow SubFlow="false" name="readTenantDirectories" entity-id="ff92e2a8-fa55-4d26-8d94-680a8f1faaed">
+        <properties>
+            <property name="processingStrategy"/>
+            <property name="processingStrategy2"/>
+            <property name="bussinessEventsLabel"/>
+            <property name="tracking:enable-default-events"/>
+            <property value="24" name="auxiliary;index"/>
+        </properties>
+        <lane isChoiceOtherwiseLane="false" index="0" hadOnlyOneElement="false" entity-id="compartment-lane#4">
+            <graphicalData height="0" width="0" y="0" x="0"/>
+            <endpoint message-exchange-pattern="OneWay" direction="Inbound" type="org.mule.tooling.ui.modules.core.ajax.AJAX" name="Ajax" entity-id="Ajax#3">
+                <graphicalData height="0" width="0" y="0" x="0"/>
+                <properties>
+                    <property name="businessEventsLabel"/>
+                    <property name="messageCacheSize"/>
+                    <property name="disableTransportTransformer"/>
+                    <property value="one-way" name="exchange-pattern"/>
+                    <property name="tracking:enable-default-events"/>
+                    <property name="ref"/>
+                    <property name="transformer-refs"/>
+                    <property name="cacheMessages"/>
+                    <property name="address"/>
+                    <property name="encoding"/>
+                    <property value="/stormpath/read-tenant-directories" name="channel"/>
+                    <property value="25" name="auxiliary;index"/>
+                    <property value="10000" name="responseTimeout"/>
+                    <property name="mimeType"/>
+                    <property name="connector-ref"/>
+                </properties>
+            </endpoint>
+            <pattern type="http://www.mulesoft.org/schema/mule/core/flow-ref" name="Flow Reference" entity-id="Flow Reference#2">
+                <graphicalData height="0" width="0" y="0" x="0"/>
+                <properties>
+                    <property value="safeReadTenantDirectories" name="name"/>
+                    <property value="26" name="auxiliary;index"/>
+                </properties>
+            </pattern>
+        </lane>
+    </flow>
+    <flow SubFlow="false" name="safeReadTenantDirectories" entity-id="2511c2e2-4da6-4760-8f4c-19de83b0de4b">
+        <properties>
+            <property value="synchronous" name="processingStrategy"/>
+            <property value="synchronous" name="processingStrategy2"/>
+            <property name="bussinessEventsLabel"/>
+            <property name="tracking:enable-default-events"/>
+            <property value="27" name="auxiliary;index"/>
+        </properties>
+        <lane isChoiceOtherwiseLane="false" index="0" hadOnlyOneElement="false" entity-id="compartment-lane#5">
+            <graphicalData height="0" width="0" y="0" x="0"/>
+            <pattern type="http://www.mulesoft.org/schema/mule/stormpath/stormpath-connector" name="Stormpath" entity-id="Stormpath#4">
+                <graphicalData height="0" width="0" y="0" x="0"/>
+                <properties>
+                    <property value="current" name="tenantId"/>
+                    <property value="http://www.mulesoft.org/schema/mule/stormpath/read-tenant" name="org.mule.tooling.ui.modules.core.widgets.meta.ModeAttribute"/>
+                    <property value="Stormpath" name="config-ref"/>
+                    <property value="28" name="auxiliary;index"/>
+                </properties>
+            </pattern>
+            <pattern type="http://www.mulesoft.org/schema/mule/core/variable-transformer" name="Variable" entity-id="Variable#2">
+                <graphicalData height="0" width="0" y="0" x="0"/>
+                <properties>
+                    <property value="tenantId" name="variableName"/>
+                    <property value="#[StringUtils.substringAfter(message.payload.href, '/tenants/')]" name="value"/>
+                    <property value="http://www.mulesoft.org/schema/mule/core/set-variable" name="org.mule.tooling.ui.modules.core.widgets.meta.ModeAttribute"/>
+                    <property value="29" name="auxiliary;index"/>
+                </properties>
+            </pattern>
+            <pattern type="http://www.mulesoft.org/schema/mule/stormpath/stormpath-connector" name="Stormpath" entity-id="Stormpath#5">
+                <graphicalData height="0" width="0" y="0" x="0"/>
+                <properties>
+                    <property name="limit"/>
+                    <property value="#[tenantId]" name="tenantId"/>
+                    <property value="http://www.mulesoft.org/schema/mule/stormpath/read-tenant-directories" name="org.mule.tooling.ui.modules.core.widgets.meta.ModeAttribute"/>
+                    <property name="offset"/>
+                    <property value="Stormpath" name="config-ref"/>
+                    <property value="30" name="auxiliary;index"/>
+                </properties>
+            </pattern>
+            <scope type="http://www.mulesoft.org/schema/mule/core/catch-exception-strategy" name="Catch Exception Strategy" entity-id="Catch Exception Strategy#2">
+                <properties>
+                    <property name="labelConfigureConditionalExecutionUsingExpression"/>
+                    <property name="when"/>
+                    <property name="enableNotifications"/>
+                    <property value="31" name="auxiliary;index"/>
+                </properties>
+                <compartment entity-id="compartment#2">
+                    <lane isChoiceOtherwiseLane="false" index="0" hadOnlyOneElement="false" entity-id="compartment-lane#6">
+                        <pattern type="http://www.mulesoft.org/schema/mule/core/set-payload" name="Set Payload" entity-id="Set Payload#2">
+                            <graphicalData height="0" width="0" y="0" x="0"/>
+                            <properties>
+<property value="#[exception.cause.message]" name="value"/>
+<property value="32" name="auxiliary;index"/>
+                            </properties>
+                        </pattern>
+                    </lane>
+                </compartment>
+            </scope>
+        </lane>
+    </flow>
+    <flow SubFlow="false" name="attemptLogin" entity-id="f9b07e27-7791-41e6-8204-9ead2e2f61a5">
+        <properties>
+            <property name="processingStrategy"/>
+            <property name="processingStrategy2"/>
+            <property name="bussinessEventsLabel"/>
+            <property name="tracking:enable-default-events"/>
+            <property value="33" name="auxiliary;index"/>
+        </properties>
+        <lane isChoiceOtherwiseLane="false" index="0" hadOnlyOneElement="false" entity-id="compartment-lane#7">
+            <graphicalData height="0" width="0" y="0" x="0"/>
+            <endpoint message-exchange-pattern="OneWay" direction="Inbound" type="org.mule.tooling.ui.modules.core.ajax.AJAX" name="Ajax" entity-id="Ajax#4">
+                <graphicalData height="0" width="0" y="0" x="0"/>
+                <properties>
+                    <property name="businessEventsLabel"/>
+                    <property name="messageCacheSize"/>
+                    <property name="disableTransportTransformer"/>
+                    <property value="one-way" name="exchange-pattern"/>
+                    <property name="tracking:enable-default-events"/>
+                    <property name="ref"/>
+                    <property name="transformer-refs"/>
+                    <property name="cacheMessages"/>
+                    <property name="address"/>
+                    <property name="encoding"/>
+                    <property value="/stormpath/attempt-login" name="channel"/>
+                    <property value="34" name="auxiliary;index"/>
+                    <property value="10000" name="responseTimeout"/>
+                    <property name="mimeType"/>
+                    <property name="connector-ref"/>
+                </properties>
+            </endpoint>
+            <pattern type="http://www.mulesoft.org/schema/mule/core/variable-transformer" name="Variable" entity-id="Variable#3">
+                <graphicalData height="0" width="0" y="0" x="0"/>
+                <properties>
+                    <property value="applicationId" name="variableName"/>
+                    <property value="#[message.payload.applicationId]" name="value"/>
+                    <property value="http://www.mulesoft.org/schema/mule/core/set-variable" name="org.mule.tooling.ui.modules.core.widgets.meta.ModeAttribute"/>
+                    <property value="35" name="auxiliary;index"/>
+                </properties>
+            </pattern>
+            <pattern type="http://www.mulesoft.org/schema/mule/core/set-payload" name="Set Payload" entity-id="Set Payload#3">
+                <graphicalData height="0" width="0" y="0" x="0"/>
+                <properties>
+                    <property value="#[StormpathUtils.createBasicLoginAttempt(message.payload.username, message.payload.password)]" name="value"/>
+                    <property value="36" name="auxiliary;index"/>
+                </properties>
+            </pattern>
+            <pattern type="http://www.mulesoft.org/schema/mule/json/object-to-json-transformer" name="Object to JSON" entity-id="Object to JSON#1">
+                <graphicalData height="0" width="0" y="0" x="0"/>
+                <properties>
+                    <property name="sourceClass"/>
+                    <property name="returnClass"/>
+                    <property name="ignoreBadInput"/>
+                    <property name="encoding"/>
+                    <property name="mapper-ref"/>
+                    <property name="mimeType"/>
+                    <property value="37" name="auxiliary;index"/>
+                </properties>
+            </pattern>
+            <pattern type="http://www.mulesoft.org/schema/mule/core/flow-ref" name="Flow Reference" entity-id="Flow Reference#3">
+                <graphicalData height="0" width="0" y="0" x="0"/>
+                <properties>
+                    <property value="safeAttemptLogin" name="name"/>
+                    <property value="38" name="auxiliary;index"/>
+                </properties>
+            </pattern>
+        </lane>
+    </flow>
+    <flow SubFlow="false" name="safeAttemptLogin" entity-id="bbf76776-7fef-4fac-b5a8-cd6db05d97e3">
+        <properties>
+            <property value="synchronous" name="processingStrategy"/>
+            <property value="synchronous" name="processingStrategy2"/>
+            <property name="bussinessEventsLabel"/>
+            <property name="tracking:enable-default-events"/>
+            <property value="39" name="auxiliary;index"/>
+        </properties>
+        <lane isChoiceOtherwiseLane="false" index="0" hadOnlyOneElement="false" entity-id="compartment-lane#8">
+            <graphicalData height="0" width="0" y="0" x="0"/>
+            <pattern type="http://www.mulesoft.org/schema/mule/stormpath/stormpath-connector" name="Stormpath" entity-id="Stormpath#6">
+                <graphicalData height="0" width="0" y="0" x="0"/>
+                <properties>
+                    <property value="#[applicationId]" name="applicationId"/>
+                    <property value="http://www.mulesoft.org/schema/mule/stormpath/attempt-login" name="org.mule.tooling.ui.modules.core.widgets.meta.ModeAttribute"/>
+                    <property value="Stormpath" name="config-ref"/>
+                    <property value="40" name="auxiliary;index"/>
+                </properties>
+            </pattern>
+            <scope type="http://www.mulesoft.org/schema/mule/core/catch-exception-strategy" name="Catch Exception Strategy" entity-id="Catch Exception Strategy#3">
+                <properties>
+                    <property name="labelConfigureConditionalExecutionUsingExpression"/>
+                    <property name="when"/>
+                    <property name="enableNotifications"/>
+                    <property value="41" name="auxiliary;index"/>
+                </properties>
+                <compartment entity-id="compartment#3">
+                    <lane isChoiceOtherwiseLane="false" index="0" hadOnlyOneElement="false" entity-id="compartment-lane#9">
+                        <pattern type="http://www.mulesoft.org/schema/mule/core/set-payload" name="Set Payload" entity-id="Set Payload#4">
+                            <graphicalData height="0" width="0" y="0" x="0"/>
+                            <properties>
+<property value="#[exception.cause.message]" name="value"/>
+<property value="42" name="auxiliary;index"/>
+                            </properties>
+                        </pattern>
+                    </lane>
+                </compartment>
+            </scope>
+        </lane>
+    </flow>
+    <flow SubFlow="false" name="createAccount" entity-id="25f29970-6b4d-406b-a3dd-5ef1bbd7a10c">
+        <properties>
+            <property name="processingStrategy"/>
+            <property name="processingStrategy2"/>
+            <property name="bussinessEventsLabel"/>
+            <property name="tracking:enable-default-events"/>
+            <property value="43" name="auxiliary;index"/>
+        </properties>
+        <lane isChoiceOtherwiseLane="false" index="0" hadOnlyOneElement="false" entity-id="compartment-lane#10">
+            <graphicalData height="0" width="0" y="0" x="0"/>
+            <endpoint message-exchange-pattern="OneWay" direction="Inbound" type="org.mule.tooling.ui.modules.core.ajax.AJAX" name="Ajax" entity-id="Ajax#5">
+                <graphicalData height="0" width="0" y="0" x="0"/>
+                <properties>
+                    <property name="businessEventsLabel"/>
+                    <property name="messageCacheSize"/>
+                    <property name="disableTransportTransformer"/>
+                    <property value="one-way" name="exchange-pattern"/>
+                    <property name="tracking:enable-default-events"/>
+                    <property name="ref"/>
+                    <property name="transformer-refs"/>
+                    <property name="cacheMessages"/>
+                    <property name="address"/>
+                    <property name="encoding"/>
+                    <property value="/stormpath/create-account" name="channel"/>
+                    <property value="44" name="auxiliary;index"/>
+                    <property value="10000" name="responseTimeout"/>
+                    <property name="mimeType"/>
+                    <property name="connector-ref"/>
+                </properties>
+            </endpoint>
+            <pattern type="http://www.mulesoft.org/schema/mule/core/variable-transformer" name="Variable" entity-id="Variable#4">
+                <graphicalData height="0" width="0" y="0" x="0"/>
+                <properties>
+                    <property value="directoryId" name="variableName"/>
+                    <property value="#[message.payload.directoryId]" name="value"/>
+                    <property value="http://www.mulesoft.org/schema/mule/core/set-variable" name="org.mule.tooling.ui.modules.core.widgets.meta.ModeAttribute"/>
+                    <property value="45" name="auxiliary;index"/>
+                </properties>
+            </pattern>
+            <pattern type="http://www.mulesoft.org/schema/mule/core/expression-component" name="Expression" entity-id="Expression#1">
+                <graphicalData height="0" width="0" y="0" x="0"/>
+                <properties>
+                    <property value="&#xA;          Account a = new Account();&#xA;          a.username = message.payload.username;&#xA;          a.email = message.payload.email;&#xA;          a.password = message.payload.password;&#xA;          a.givenName = message.payload.givenName;&#xA;          a.surname = message.payload.surname;&#xA;          message.payload = a;&#xA;        " name="expression"/>
+                    <property name="file"/>
+                    <property name="evaluator"/>
+                    <property value="46" name="auxiliary;index"/>
+                </properties>
+            </pattern>
+            <pattern type="http://www.mulesoft.org/schema/mule/core/flow-ref" name="Flow Reference" entity-id="Flow Reference#4">
+                <graphicalData height="0" width="0" y="0" x="0"/>
+                <properties>
+                    <property value="safeCreateAccount" name="name"/>
+                    <property value="47" name="auxiliary;index"/>
+                </properties>
+            </pattern>
+        </lane>
+    </flow>
+    <flow SubFlow="false" name="safeCreateAccount" entity-id="299005d4-b49d-4816-9204-eecb112c1ab0">
+        <properties>
+            <property value="synchronous" name="processingStrategy"/>
+            <property value="synchronous" name="processingStrategy2"/>
+            <property name="bussinessEventsLabel"/>
+            <property name="tracking:enable-default-events"/>
+            <property value="48" name="auxiliary;index"/>
+        </properties>
+        <lane isChoiceOtherwiseLane="false" index="0" hadOnlyOneElement="false" entity-id="compartment-lane#11">
+            <graphicalData height="0" width="0" y="0" x="0"/>
+            <pattern type="http://www.mulesoft.org/schema/mule/stormpath/stormpath-connector" name="Stormpath" entity-id="Stormpath#7">
+                <graphicalData height="0" width="0" y="0" x="0"/>
+                <properties>
+                    <property value="#[directoryId]" name="directoryId"/>
+                    <property value="http://www.mulesoft.org/schema/mule/stormpath/create-account" name="org.mule.tooling.ui.modules.core.widgets.meta.ModeAttribute"/>
+                    <property value="Stormpath" name="config-ref"/>
+                    <property value="49" name="auxiliary;index"/>
+                </properties>
+            </pattern>
+            <scope type="http://www.mulesoft.org/schema/mule/core/catch-exception-strategy" name="Catch Exception Strategy" entity-id="Catch Exception Strategy#4">
+                <properties>
+                    <property name="labelConfigureConditionalExecutionUsingExpression"/>
+                    <property name="when"/>
+                    <property name="enableNotifications"/>
+                    <property value="50" name="auxiliary;index"/>
+                </properties>
+                <compartment entity-id="compartment#4">
+                    <lane isChoiceOtherwiseLane="false" index="0" hadOnlyOneElement="false" entity-id="compartment-lane#12">
+                        <pattern type="http://www.mulesoft.org/schema/mule/core/set-payload" name="Set Payload" entity-id="Set Payload#5">
+                            <graphicalData height="0" width="0" y="0" x="0"/>
+                            <properties>
+<property value="#[exception.cause.message]" name="value"/>
+<property value="51" name="auxiliary;index"/>
+                            </properties>
+                        </pattern>
+                    </lane>
+                </compartment>
+            </scope>
+        </lane>
+    </flow>
+    <flow SubFlow="false" name="resetPassword" entity-id="7764ec2c-78d2-47c1-a42d-746dc1030b2a">
+        <properties>
+            <property name="processingStrategy"/>
+            <property name="processingStrategy2"/>
+            <property name="bussinessEventsLabel"/>
+            <property name="tracking:enable-default-events"/>
+            <property value="52" name="auxiliary;index"/>
+        </properties>
+        <lane isChoiceOtherwiseLane="false" index="0" hadOnlyOneElement="false" entity-id="compartment-lane#13">
+            <graphicalData height="0" width="0" y="0" x="0"/>
+            <endpoint message-exchange-pattern="OneWay" direction="Inbound" type="org.mule.tooling.ui.modules.core.ajax.AJAX" name="Ajax" entity-id="Ajax#6">
+                <graphicalData height="0" width="0" y="0" x="0"/>
+                <properties>
+                    <property name="businessEventsLabel"/>
+                    <property name="messageCacheSize"/>
+                    <property name="disableTransportTransformer"/>
+                    <property value="one-way" name="exchange-pattern"/>
+                    <property name="tracking:enable-default-events"/>
+                    <property name="ref"/>
+                    <property name="transformer-refs"/>
+                    <property name="cacheMessages"/>
+                    <property name="address"/>
+                    <property name="encoding"/>
+                    <property value="/stormpath/reset-password" name="channel"/>
+                    <property value="53" name="auxiliary;index"/>
+                    <property value="10000" name="responseTimeout"/>
+                    <property name="mimeType"/>
+                    <property name="connector-ref"/>
+                </properties>
+            </endpoint>
+            <pattern type="http://www.mulesoft.org/schema/mule/core/variable-transformer" name="Variable" entity-id="Variable#5">
+                <graphicalData height="0" width="0" y="0" x="0"/>
+                <properties>
+                    <property value="applicationId" name="variableName"/>
+                    <property value="#[message.payload.applicationId]" name="value"/>
+                    <property value="http://www.mulesoft.org/schema/mule/core/set-variable" name="org.mule.tooling.ui.modules.core.widgets.meta.ModeAttribute"/>
+                    <property value="54" name="auxiliary;index"/>
+                </properties>
+            </pattern>
+            <pattern type="http://www.mulesoft.org/schema/mule/core/set-payload" name="Set Payload" entity-id="Set Payload#6">
+                <graphicalData height="0" width="0" y="0" x="0"/>
+                <properties>
+                    <property value="#[new Email().withEmail(message.payload.email)]" name="value"/>
+                    <property value="55" name="auxiliary;index"/>
+                </properties>
+            </pattern>
+            <pattern type="http://www.mulesoft.org/schema/mule/json/object-to-json-transformer" name="Object to JSON" entity-id="Object to JSON#2">
+                <graphicalData height="0" width="0" y="0" x="0"/>
+                <properties>
+                    <property name="sourceClass"/>
+                    <property name="returnClass"/>
+                    <property name="ignoreBadInput"/>
+                    <property name="encoding"/>
+                    <property name="mapper-ref"/>
+                    <property name="mimeType"/>
+                    <property value="56" name="auxiliary;index"/>
+                </properties>
+            </pattern>
+            <pattern type="http://www.mulesoft.org/schema/mule/core/flow-ref" name="Flow Reference" entity-id="Flow Reference#5">
+                <graphicalData height="0" width="0" y="0" x="0"/>
+                <properties>
+                    <property value="safeResetPassword" name="name"/>
+                    <property value="57" name="auxiliary;index"/>
+                </properties>
+            </pattern>
+        </lane>
+    </flow>
+    <flow SubFlow="false" name="safeResetPassword" entity-id="09767cb1-03c6-45ef-85be-6e13ef8c4c79">
+        <properties>
+            <property value="synchronous" name="processingStrategy"/>
+            <property value="synchronous" name="processingStrategy2"/>
+            <property name="bussinessEventsLabel"/>
+            <property name="tracking:enable-default-events"/>
+            <property value="58" name="auxiliary;index"/>
+        </properties>
+        <lane isChoiceOtherwiseLane="false" index="0" hadOnlyOneElement="false" entity-id="compartment-lane#14">
+            <graphicalData height="0" width="0" y="0" x="0"/>
+            <pattern type="http://www.mulesoft.org/schema/mule/stormpath/stormpath-connector" name="Stormpath" entity-id="Stormpath#8">
+                <graphicalData height="0" width="0" y="0" x="0"/>
+                <properties>
+                    <property value="#[applicationId]" name="applicationId"/>
+                    <property value="http://www.mulesoft.org/schema/mule/stormpath/create-password-reset-token" name="org.mule.tooling.ui.modules.core.widgets.meta.ModeAttribute"/>
+                    <property value="Stormpath" name="config-ref"/>
+                    <property value="59" name="auxiliary;index"/>
+                </properties>
+            </pattern>
+            <scope type="http://www.mulesoft.org/schema/mule/core/catch-exception-strategy" name="Catch Exception Strategy" entity-id="Catch Exception Strategy#5">
+                <properties>
+                    <property name="labelConfigureConditionalExecutionUsingExpression"/>
+                    <property name="when"/>
+                    <property name="enableNotifications"/>
+                    <property value="60" name="auxiliary;index"/>
+                </properties>
+                <compartment entity-id="compartment#5">
+                    <lane isChoiceOtherwiseLane="false" index="0" hadOnlyOneElement="false" entity-id="compartment-lane#15">
+                        <pattern type="http://www.mulesoft.org/schema/mule/core/set-payload" name="Set Payload" entity-id="Set Payload#7">
+                            <graphicalData height="0" width="0" y="0" x="0"/>
+                            <properties>
+<property value="#[exception.cause.message]" name="value"/>
+<property value="61" name="auxiliary;index"/>
+                            </properties>
+                        </pattern>
+                    </lane>
+                </compartment>
+            </scope>
+        </lane>
+    </flow>
+</mule-configuration>

@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-type" content="text/html; charset=UTF-8" />
+
+<title>Stormpath AJAX Demo</title>
+
+<link rel="stylesheet" type="text/css" href="http://code.jquery.com/ui/1.10.2/themes/redmond/jquery-ui.css" />
+<script type="text/javascript" src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+<script type="text/javascript" src="http://code.jquery.com/jquery-1.9.1.js"></script>
+<script type="text/javascript" src="http://code.jquery.com/ui/1.10.2/jquery-ui.js"></script>
+<script type="text/javascript" src="mule-resource/js/mule.js"></script>
+
+<link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Open+Sans" />
+
+<style type="text/css">
+body { color: #333; font-family: "Open Sans", Arial, Helvetica, sans-serif; font-size: 14px; }
+
+#wrapper { width: 960px; margin: 20px auto; }
+
+#header { overflow: hidden; position: relative; margin-bottom: 10px; height: 60px;
+  font-size: 24px; border-bottom: 2px solid rgb(53, 114, 166); }
+#mulesoft-logo { width: 145px; height: 43px; padding-bottom: 6px;
+  position: absolute; bottom: 0; left: 0; }
+#stormpath-logo { width: 132px; height: 25px; padding-bottom: 6px;
+  position: absolute; bottom: 0; right: 0; }
+#demo { font-size: 18px; margin-bottom: 30px; }
+
+div.stormpath-function { width: 600px; margin: 20px auto; padding: 10px;
+  border: 1px solid #999; text-align: center; }
+
+.ui-widget { font-size: 14px; }
+fieldset { border: 0; text-align: left; zbackground: orange; padding: 0}
+label { float: left; width: 100px; }
+input { display: block; width: 450px; margin-bottom: 6px; }
+select { display: block; width: 450px; margin-bottom: 6px; }
+#form-login-actions { margin-top: 10px; text-align: center; }
+.resource { margin-bottom: 20px; }
+
+#message { display: none; }
+</style>
+
+<script type="text/javascript">
+
+var muleReady = false;
+var jQueryReady = false;
+
+// mule.rpc (dojo cometd) is ready
+dojo.addOnLoad(function() {
+  console.log('mule ready');
+  muleReady = true;
+  appReady();
+});
+
+// jquery is ready
+$(function() {
+  console.log('jquery ready');
+  jQueryReady = true;
+  appReady();
+});
+
+function appReady() {
+  if (!muleReady || !jQueryReady) {
+    return;
+  }
+  console.log('app ready');
+
+  // populate dropdowns with applications and directories
+  readTenantApplications();
+  readTenantDirectories();
+
+  // buttons
+  //
+  $('#form-login-submit').button()
+    .click(function(event) {
+      attemptLogin();
+      event.preventDefault();
+    }
+  );
+  $('#button-create-account').button()
+    .click(function(event) {
+      $('#create-account').dialog('open');
+    }
+  );
+  $('#button-reset').button()
+    .click(function() {
+      $('#reset-password').dialog('open');
+    }
+  );
+
+  // dialogs
+  //
+  $('#create-account').dialog({
+    autoOpen: false,
+    width: 600,
+    modal: true,
+    buttons: {
+      'Create Account': createAccount,
+      'Cancel': function() {
+        $(this).dialog('close');
+      }
+    }
+  });
+  $('#reset-password').dialog({
+    autoOpen: false,
+    width: 600,
+    modal: true,
+    buttons: {
+      'Reset Password': resetPassword,
+      'Cancel': function() {
+        $(this).dialog('close');
+      }
+    }
+  });
+  $('#message').dialog({
+    autoOpen: false,
+    width: 400,
+    modal: true,
+    buttons: {
+      'OK': function() {
+        $(this).dialog('close');
+      }
+    }
+  });
+
+  // forms
+  //
+  $('.form').submit(function(event) {
+    event.preventDefault();
+  });
+}
+
+function readTenantApplications() {
+  console.log('read tenant applications');
+
+  mule.rpc('/stormpath/read-tenant-applications', {}, readTenantApplicationsResponse);
+}
+
+function readTenantApplicationsResponse(message, error) {
+  console.log('read tenant applications response');
+
+  if (!message.data.href) {
+    // exception from mule, parse response
+    try {
+      var data = JSON.parse(message.data);
+      showMessage(data.message + ' (' + data.developerMessage + ')');
+    } catch (e) {
+      showMessage('Mule exception.');
+    }
+    return;
+  }
+
+  // append each application to dropdowns in login and reset password forms
+  var data = message.data.items;
+  $.each(data, function(k, v) {
+    var id = v.href.split("/").pop(); // last part of href path
+    $('<option>', { value: id, text: v.name }).appendTo('#form-login-app');
+    $('<option>', { value: id, text: v.name }).appendTo('#form-reset-app');
+  });
+
+  // replace dropdown text
+  $('#form-login-app option:first').text('Choose application...');
+  $('#form-reset-app option:first').text('Choose application...');
+}
+
+function readTenantDirectories() {
+  console.log('read tenant directories');
+
+  mule.rpc('/stormpath/read-tenant-directories', {}, readTenantDirectoriesResponse);
+}
+
+function readTenantDirectoriesResponse(message, error) {
+  console.log('read tenant directories response');
+
+  if (!message.data.href) {
+    // exception from mule, parse response
+    try {
+      var data = JSON.parse(message.data);
+      showMessage(data.message + ' (' + data.developerMessage + ')');
+    } catch (e) {
+      showMessage('Mule exception.');
+    }
+    return;
+  }
+
+  // append each directory to dropdown in create account form
+  var data = message.data.items;
+  $.each(data, function(k, v) {
+    var id = v.href.split("/").pop(); // last part of href path
+    $('<option />', { value: id, text: v.name }).appendTo('#form-account-dir');
+  });
+
+  // replace dropdown text
+  $('#form-account-dir option:first').text('Choose directory...');
+}
+
+function attemptLogin() {
+  console.log('attempt login');
+
+  var data = {
+    applicationId: $('#form-login-app').val(),
+    username: $('#form-login-username').val(),
+    password: $('#form-login-password').val()
+  };
+
+  mule.rpc('/stormpath/attempt-login', data, attemptLoginResponse);
+}
+
+function attemptLoginResponse(message, error) {
+  console.log('attempt login response');
+
+  if (message.data.account) {
+    showMessage('Login successful!');
+  } else {
+    // exception from mule, parse response
+    try {
+      var data = JSON.parse(message.data);
+      showMessage(data.message);
+    } catch (e) {
+      showMessage('Mule exception.');
+    }
+  }
+}
+
+function createAccount() {
+  console.log('create account');
+
+  var data = {
+    directoryId: $('#form-account-dir').val(),
+    username: $('#form-account-username').val(),
+    email: $('#form-account-email').val(),
+    password: $('#form-account-password').val(),
+    givenName: $('#form-account-givenname').val(),
+    surname: $('#form-account-surname').val()
+  };
+
+  mule.rpc('/stormpath/create-account', data, createAccountResponse);
+
+  $('#create-account').dialog('close');
+}
+
+function createAccountResponse(message, error) {
+  console.log('create account response');
+
+  if (message.data.username) {
+    showMessage('Account created (status: ' + message.data.status + '). ' +
+      'If you have activated the accout registration and verification workflow, ' +
+      'please check your email for further instructions.');
+  } else {
+    // exception from mule, parse response
+    try {
+      var data = JSON.parse(message.data);
+      showMessage(data.message);
+    } catch (e) {
+      showMessage('Mule exception.');
+    }
+  }
+}
+
+function resetPassword() {
+  console.log('reset password');
+
+  var data = {
+    applicationId: $('#form-reset-app').val(),
+    email: $('#form-reset-email').val()
+  };
+
+  mule.rpc('/stormpath/reset-password', data, resetPasswordResponse);
+
+  $('#reset-password').dialog('close');
+}
+
+function resetPasswordResponse(message, error) {
+  console.log('reset password response');
+
+  if (message.data.account) {
+    showMessage('You have been emailed password reset instructions.');
+  } else {
+    // exception from mule, parse response
+    try {
+      var data = JSON.parse(message.data);
+      showMessage(data.message);
+    } catch (e) {
+      showMessage('Mule exception.');
+    }
+  }
+}
+
+function showMessage(msg) {
+  console.log('show message');
+
+  $('#message-text').text(msg);
+  $('#message').dialog('open');
+}
+</script>
+
+</head>
+<body>
+
+<div id="wrapper">
+
+<div id="header">
+<img id="mulesoft-logo" src="mulesoft.gif" alt="MuleSoft" />
+<img id="stormpath-logo" src="stormpath.png" alt="Stormpath" />
+</div>
+
+<div id="demo">
+Stormpath Cloud Connector Demonstration
+</div>
+
+<div id="login" class="stormpath-function">
+<form id="form-login" class="form" action="#">
+<fieldset>
+<div class="resource">
+<label for="form-login-app">Application:</label>
+<select name="form-login-app" id="form-login-app" class="ui-widget-content ui-corner-all">
+<option value="0">Waiting for list of applications...</option>
+</select>
+</div>
+<label for="form-login-username">Username:</label>
+<input type="text" name="form-login-username" id="form-login-username" class="ui-widget-content ui-corner-all" />
+<label for="form-login-password">Password:</label>
+<input type="password" name="form-login-password" id="form-login-password" class="ui-widget-content ui-corner-all" />
+<div id="form-login-actions">
+<button name="form-login-submit" id="form-login-submit">Login</button>
+</div>
+</fieldset>
+</form>
+</div><!-- login -->
+
+<div class="stormpath-function">
+<button id="button-create-account">Create new account</button>
+</div>
+
+<div id="create-account" title="Create Account">
+<form id="form-account" class="form" action="#">
+<fieldset>
+<div class="resource">
+<label for="form-account-dir">Directory:</label>
+<select name="form-account-dir" id="form-account-dir" class="ui-widget-content ui-corner-all">
+<option value="0">Waiting for list of directories...</option>
+</select>
+</div>
+<label for="form-account-username">Username:</label>
+<input type="text" name="form-account-username" id="form-account-username" class="ui-widget-content ui-corner-all" />
+<label for="form-account-givenname">First Name:</label>
+<input type="text" name="form-account-givenname" id="form-account-givenname" class="ui-widget-content ui-corner-all" />
+<label for="form-account-surname">Last Name:</label>
+<input type="text" name="form-account-surname" id="form-account-surname" class="ui-widget-content ui-corner-all" />
+<label for="form-account-email">Email:</label>
+<input type="text" name="form-account-email" id="form-account-email" class="ui-widget-content ui-corner-all" />
+<label for="form-account-password">Password:</label>
+<input type="password" name="form-account-password" id="form-account-password" class="ui-widget-content ui-corner-all" />
+</fieldset>
+</form>
+</div><!-- create-account -->
+
+<div class="stormpath-function">
+<button id="button-reset">Reset your password</button>
+</div>
+
+<div id="reset-password" title="Reset Password">
+<form id="form-reset" class="form" action="#">
+<fieldset>
+<div class="resource">
+<label for="form-reset-app">Application:</label>
+<select name="form-reset-app" id="form-reset-app" class="ui-widget-content ui-corner-all">
+<option value="0">Waiting for list of applications...</option>
+</select>
+</div>
+<label for="form-reset-email">Email:</label>
+<input type="text" name="form-reset-email" id="form-reset-email" class="ui-widget-content ui-corner-all" />
+</fieldset>
+</form>
+</div><!-- reset-password -->
+
+<div id="message">
+<div id="message-text"></div>
+</div>
+
+</div><!-- wrapper -->
+
+</body>
+</html>

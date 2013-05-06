@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking" xmlns:json="http://www.mulesoft.org/schema/mule/json" xmlns:stormpath="http://www.mulesoft.org/schema/mule/stormpath" xmlns:ajax="http://www.mulesoft.org/schema/mule/ajax" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:spring="http://www.springframework.org/schema/beans" version="EE-3.4.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/json/current/mule-json.xsd
+http://www.mulesoft.org/schema/mule/ajax http://www.mulesoft.org/schema/mule/ajax/current/mule-ajax.xsd
+http://www.mulesoft.org/schema/mule/stormpath http://www.mulesoft.org/schema/mule/stormpath/current/mule-stormpath.xsd
+http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd">
+
+    <configuration doc:name="Configuration">
+        <expression-language>
+            <import class="org.mule.util.StringUtils" />
+            <import class="org.mule.modules.stormpath.StormpathUtils" />
+            <import class="org.mule.modules.stormpath.model.HRef" />
+            <import class="org.mule.modules.stormpath.model.Application" />
+            <import class="org.mule.modules.stormpath.model.Directory" />
+            <import class="org.mule.modules.stormpath.model.Group" />
+            <import class="org.mule.modules.stormpath.model.GroupMembership" />
+            <import class="org.mule.modules.stormpath.model.Account" />
+            <import class="org.mule.modules.stormpath.model.LoginAttempt" />
+            <import class="org.mule.modules.stormpath.model.Email" />
+        </expression-language>
+    </configuration>
+
+    <stormpath:config name="Stormpath" apiKeyId="${stormpath.apiKeyId}" apiKeySecret="${stormpath.apiKeySecret}" doc:name="Stormpath"/>
+
+    <ajax:connector name="Ajax" serverUrl="http://localhost:8081/stormpath" resourceBase="${app.home}/docroot" jsonCommented="true" doc:name="Ajax"/>
+
+    <flow name="readTenantApplications" doc:name="readTenantApplications">
+        <ajax:inbound-endpoint channel="/stormpath/read-tenant-applications" responseTimeout="10000" doc:name="Ajax"/>
+
+        <flow-ref name="safeReadTenantApplications" doc:name="Flow Reference"/>
+    </flow>
+
+    <!-- private flow in order to catch exceptions from AJAX inbound endpoint; see http://www.mulesoft.org/jira/browse/MULE-6273 -->
+    <flow name="safeReadTenantApplications" processingStrategy="synchronous" doc:name="safeReadTenantApplications">
+        <stormpath:read-tenant tenantId="current" config-ref="Stormpath" doc:name="Stormpath"/>
+
+        <set-variable variableName="tenantId" value="#[StringUtils.substringAfter(message.payload.href, '/tenants/')]" doc:name="Variable"/>
+
+        <stormpath:read-tenant-applications tenantId="#[tenantId]" config-ref="Stormpath" doc:name="Stormpath"/>
+
+        <catch-exception-strategy doc:name="Catch Exception Strategy">
+            <set-payload value="#[exception.cause.message]" doc:name="Set Payload"/>
+        </catch-exception-strategy>
+    </flow>
+
+    <flow name="readTenantDirectories" doc:name="readTenantDirectories">
+        <ajax:inbound-endpoint channel="/stormpath/read-tenant-directories" responseTimeout="10000" doc:name="Ajax"/>
+
+        <flow-ref name="safeReadTenantDirectories" doc:name="Flow Reference"/>
+    </flow>
+
+    <!-- private flow in order to catch exceptions from AJAX inbound endpoint; see http://www.mulesoft.org/jira/browse/MULE-6273 -->
+    <flow name="safeReadTenantDirectories" processingStrategy="synchronous" doc:name="safeReadTenantDirectories">
+        <stormpath:read-tenant tenantId="current" config-ref="Stormpath" doc:name="Stormpath"/>
+
+        <set-variable variableName="tenantId" value="#[StringUtils.substringAfter(message.payload.href, '/tenants/')]" doc:name="Variable"/>
+
+        <stormpath:read-tenant-directories tenantId="#[tenantId]" config-ref="Stormpath" doc:name="Stormpath"/>
+
+        <catch-exception-strategy doc:name="Catch Exception Strategy">
+            <set-payload value="#[exception.cause.message]" doc:name="Set Payload"/>
+        </catch-exception-strategy>
+    </flow>
+
+    <flow name="attemptLogin" doc:name="attemptLogin">
+        <ajax:inbound-endpoint channel="/stormpath/attempt-login" responseTimeout="10000" doc:name="Ajax"/>
+
+        <set-variable variableName="applicationId" value="#[message.payload.applicationId]" doc:name="Variable"/>
+        <set-payload
+            value="#[StormpathUtils.createBasicLoginAttempt(message.payload.username, message.payload.password)]" doc:name="Set Payload"/>
+
+        <!-- TODO: transformer shouldn't be needed; NPE in studio without it -->
+        <json:object-to-json-transformer doc:name="Object to JSON"/>
+
+        <flow-ref name="safeAttemptLogin" doc:name="Flow Reference"/>
+    </flow>
+
+    <!-- private flow in order to catch exceptions from AJAX inbound endpoint; see http://www.mulesoft.org/jira/browse/MULE-6273 -->
+    <flow name="safeAttemptLogin" processingStrategy="synchronous" doc:name="safeAttemptLogin">
+        <stormpath:attempt-login config-ref="Stormpath" applicationId="#[applicationId]" doc:name="Stormpath" />
+
+        <catch-exception-strategy doc:name="Catch Exception Strategy">
+            <set-payload value="#[exception.cause.message]" doc:name="Set Payload"/>
+        </catch-exception-strategy>
+    </flow>
+
+    <flow name="createAccount" doc:name="createAccount">
+        <ajax:inbound-endpoint channel="/stormpath/create-account" responseTimeout="10000" doc:name="Ajax"/>
+
+        <set-variable variableName="directoryId" value="#[message.payload.directoryId]" doc:name="Variable"/>
+        <expression-component doc:name="Expression"><![CDATA[
+          Account a = new Account();
+          a.username = message.payload.username;
+          a.email = message.payload.email;
+          a.password = message.payload.password;
+          a.givenName = message.payload.givenName;
+          a.surname = message.payload.surname;
+          message.payload = a;
+        ]]></expression-component>
+
+        <flow-ref name="safeCreateAccount" doc:name="Flow Reference"/>
+    </flow>
+
+    <!-- private flow in order to catch exceptions from AJAX inbound endpoint; see http://www.mulesoft.org/jira/browse/MULE-6273 -->
+    <flow name="safeCreateAccount" processingStrategy="synchronous" doc:name="safeCreateAccount">
+        <stormpath:create-account config-ref="Stormpath" directoryId="#[directoryId]" doc:name="Stormpath"/>
+
+        <catch-exception-strategy doc:name="Catch Exception Strategy">
+            <set-payload value="#[exception.cause.message]" doc:name="Set Payload"/>
+        </catch-exception-strategy>
+    </flow>
+
+    <flow name="resetPassword" doc:name="resetPassword">
+        <ajax:inbound-endpoint channel="/stormpath/reset-password" responseTimeout="10000" doc:name="Ajax"/>
+
+        <set-variable variableName="applicationId" value="#[message.payload.applicationId]" doc:name="Variable"/>
+        <set-payload
+            value="#[new Email().withEmail(message.payload.email)]" doc:name="Set Payload"/>
+
+        <!-- TODO: transformer shouldn't be needed; NPE in studio without it -->
+        <json:object-to-json-transformer doc:name="Object to JSON"/>
+
+        <flow-ref name="safeResetPassword" doc:name="Flow Reference"/>
+    </flow>
+
+    <!-- private flow in order to catch exceptions from AJAX inbound endpoint; see http://www.mulesoft.org/jira/browse/MULE-6273 -->
+    <flow name="safeResetPassword" processingStrategy="synchronous" doc:name="safeResetPassword">
+        <stormpath:create-password-reset-token config-ref="Stormpath" applicationId="#[applicationId]" doc:name="Stormpath"/>
+
+        <catch-exception-strategy doc:name="Catch Exception Strategy">
+            <set-payload value="#[exception.cause.message]" doc:name="Set Payload"/>
+        </catch-exception-strategy>
+    </flow>
+</mule>
